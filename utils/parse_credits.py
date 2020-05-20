@@ -46,7 +46,8 @@ class CreditsParser(object):
     """
 
     def __init__(self, sheet_number, feedback_path, json_prefix, credits_regex_raw=r'Aufgabe \d: (\d+)/\d'):
-        self._sheet_string = f'0{sheet_number}' if (sheet_number < 10) else f'{sheet_number}'
+        self._sheet_string = 'uebungsblatt-'
+        self._sheet_string += f'0{sheet_number}' if (sheet_number < 10) else f'{sheet_number}'
 
         self._credits_regex = re.compile(credits_regex_raw)
         self._feedback_path = feedback_path

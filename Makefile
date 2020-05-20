@@ -32,7 +32,7 @@ checkout = $(info $(shell svn checkout --username $(SVN_USER) $(SVN_URL)$(1) $(2
 
 checkout-or-update = $(if $(shell [[ -d $(2) ]] && echo y),$(call update-folder,$(2)),$(call checkout,$(1),$(2)))
 
-clean_up_and_push = $(info $(shell cd $(SUBMISSIONS_DIR)/$(1) ; make -C $(EXERCISE_FOLDER_PREFIX)$(2) clean ; svn add $(EXERCISE_FOLDER_PREFIX)$(2)/$(FEEDBACK_FILE) ; svn commit $(SUBMISSIONS_DIR)/$(1) -m "Feedback hinzugefügt"))
+clean_up_and_push = $(info $(shell cd $(SUBMISSIONS_DIR)/$(1) ; make -C $(EXERCISE_FOLDER_PREFIX)$(2) clean ; svn add $(EXERCISE_FOLDER_PREFIX)$(2)/$(FEEDBACK_FILE) ; svn commit -m "Feedback hinzugefügt"))
 
 update-folder =  $(info $(shell svn update --username $(SVN_USER) $(1) && echo Updated $(1)))
 
@@ -54,13 +54,13 @@ checkout-or-update-all: load-tut-list $(SUBMISSIONS_DIR)
 	@$(foreach tut, $(TUT_LIST), $(call checkout-or-update,$(tut),$(SUBMISSIONS_DIR)/$(tut)))
 
 
-aggr%: @$(CREDIT_DIR)/$(CREDITS_JSON_PREFIX)-%.json ;
+aggr%: @$(CREDIT_DIR)/$(CREDITS_JSON_PREFIX)-$(EXERCISE_FOLDER_PREFIX)%.json ;
 
 feedback%: FORCE
 	$(UTILS_DIR)/$(FEEDBACK_SCRIPT) $* $(TASK_DIR)/tasks$*.json $(SUBMISSIONS_DIR) $(SVN_USER)
 
-post_credits%: $(CREDIT_DIR)/$(CREDITS_JSON_PREFIX)-%.json FORCE
-	$(UTILS_DIR)/$(POST_JSON_SCRIPT) $(BULK_URL) $(CREDIT_DIR)/$(CREDITS_JSON_PREFIX)-$*.json $(SVN_USER) $(PW)
+post_credits%: $(CREDIT_DIR)/$(CREDITS_JSON_PREFIX)-$(EXERCISE_FOLDER_PREFIX)%.json FORCE
+	$(UTILS_DIR)/$(POST_JSON_SCRIPT) $(BULK_URL) $(CREDIT_DIR)/$(CREDITS_JSON_PREFIX)-$(EXERCISE_FOLDER_PREFIX)$*.json $(SVN_USER) $(PW)
 
 push%: load-tut-list FORCE
 	@$(foreach tut, $(TUT_LIST), $(call clean_up_and_push,$(tut),$*))
@@ -79,7 +79,7 @@ $(SUBMISSIONS_DIR):
 $(CONF_DIR)/$(TUTANTS_CONF_FILE): $(CONF_DIR)
 	@$(UTILS_DIR)/$(NAME_SCRIPT) $(COURSE_URL) $(SVN_USER) $(PW) > $(CONF_DIR)/$(TUTANTS_CONF_FILE)
 
-$(CREDIT_DIR)/$(CREDITS_JSON_PREFIX)-%.json: $(CREDIT_DIR)
+$(CREDIT_DIR)/$(CREDITS_JSON_PREFIX)-$(EXERCISE_FOLDER_PREFIX)%.json: $(CREDIT_DIR)
 	@$(UTILS_DIR)/$(CREATE_CREDITS_SCRIPT) $* $(SVN_USER) $(SUBMISSIONS_DIR) $(CREDIT_DIR) $(CREDITS_JSON_PREFIX) $(UTILS_DIR)/$(PARSE_CREDITS_SCRIPT)
 
 .PHONY: clean
