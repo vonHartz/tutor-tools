@@ -4,12 +4,12 @@
 
 from lxml import html
 import click
-import csv
 import re
 import requests
 
 daphne_url = "https://daphne.informatik.uni-freiburg.de"
 login_url = "https://daphne.informatik.uni-freiburg.de/login/"
+
 
 @click.command()
 @click.argument('url', nargs=1, required=True)
@@ -33,27 +33,21 @@ def main(url, rz_user, password):
         set(tree.xpath("//input[@name='lt']/@value")))[0]
 
     login_payload = {
-	   "csrfmiddlewaretoken": auth_token,
-	   "username": rz_user,
-	   "password": password,
-       "lt": lt_token
+        "csrfmiddlewaretoken": auth_token,
+        "username": rz_user,
+        "password": password,
+        "lt": lt_token
     }
 
     headers = {
         "Referer": login_url,
     }
 
-    result = session_requests.post(
-    	login_url,
-    	data = login_payload,
-    	headers = headers
-    )
+    result = session_requests.post(login_url, data=login_payload,
+                                   headers=headers)
 
     # request page content
-    html_content = session_requests.get(
-    	url,
-    	headers = dict(referer = url)
-    ).text
+    html_content = session_requests.get(url, headers=dict(referer=url)).text
 
     assert url.startswith(daphne_url)
     course_string = url[len(daphne_url):]
@@ -73,6 +67,7 @@ def main(url, rz_user, password):
         tutants.remove(rz_user)
 
     print(' '.join(tutants))
+
 
 if __name__ == "__main__":
     main()

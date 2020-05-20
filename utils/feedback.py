@@ -8,20 +8,20 @@
 import click
 import os
 import json
-import sys
 import subprocess
-import codecs
 import re
 
 files = ['erfahrungen.txt']
 outputName = 'feedback-tutor' + '.txt'
-dontCheck = ['.svn', 'private', 'public', '_Feedback', 'internal', 'sample_solutions']
+dontCheck = ['.svn', 'private', 'public', '_Feedback', 'internal',
+             'sample_solutions']
 directoryName = 'uebungsblatt-'
 optionalFiles = ['Makefile']
 
 hr1 = '=============\n\n'
 hr2 = '-------------\n\n'
 signature = "\nBei Fragen zur Korrektur (Punktabzüge usw.) bin ich jederzeit per Mail erreichbar.\n\n Jan <hartzj@cs.uni-freiburg.de>"
+
 
 def load_tasks(task_file):
     """
@@ -53,7 +53,8 @@ def load_tasks(task_file):
 
     return tasks
 
-def createFile(missing, illegal, empty, formatting='', template='',
+
+def createFile(points, missing, illegal, empty, formatting='', template='',
                silent=False, override=False, log=False, add=False,
                useFlake=False):
     fileName = getFileName(override=override)
@@ -132,6 +133,7 @@ def createTemplate(tasks, temp, points, recursiveCall, prefix):
         temp += "\n" + 79*"="
     return (temp, points)
 
+
 @click.command()
 @click.argument('sheet_no', nargs=1, required=True)
 @click.argument('task_file', nargs=1, required=True)
@@ -142,8 +144,8 @@ def createTemplate(tasks, temp, points, recursiveCall, prefix):
 @click.option('-o', '--override', is_flag=True)
 @click.option('-a', '--add', is_flag=True)
 @click.option('-f', '--noflake', is_flag=True)
-def main(sheet_no, task_file, submissions_dir, rz_short, silent, nolog, override, add,
-         noflake):
+def main(sheet_no, task_file, submissions_dir, rz_short, silent, nolog,
+         override, add, noflake):
     """
     Create the feedback sheet for each submission of a given sheet.
 
@@ -171,13 +173,13 @@ def main(sheet_no, task_file, submissions_dir, rz_short, silent, nolog, override
             print(dir)
             print(79*"=")
         os.chdir(dir)
-        subprocess.call('svn update',shell=True)
+        subprocess.call('svn update', shell=True)
         commits = os.listdir()
         if 'uebungsblatt-' + sheet_no not in commits:
             if not silent:
                 print('uebungsblatt-' + sheet_no, 'not committed.\n')
-            createFile([], [], True, silent=silent, override=override, log=log,
-                       add=add, useFlake=useFlake, template=template)
+            createFile(points, [], [], True, silent=silent, override=override,
+                       log=log, add=add, useFlake=useFlake, template=template)
             os.chdir('..')
             continue
 
@@ -187,8 +189,8 @@ def main(sheet_no, task_file, submissions_dir, rz_short, silent, nolog, override
             os.chdir('..')
             if not silent:
                 print('Nothing committed\n')
-            createFile([], [], True, silent=silent, override=override, log=log,
-                       add=add, useFlake=useFlake, template=template)
+            createFile(points, [], [], True, silent=silent, override=override,
+                       log=log, add=add, useFlake=useFlake, template=template)
             os.chdir('..')
             continue
 
@@ -220,7 +222,8 @@ def main(sheet_no, task_file, submissions_dir, rz_short, silent, nolog, override
         try:
             for c in commits:
                 if c.endswith('.py'):
-                    p = subprocess.Popen('flake8 '+ c, stdout=subprocess.PIPE, shell=True)
+                    p = subprocess.Popen(
+                        'flake8 ' + c, stdout=subprocess.PIPE, shell=True)
                     flake = p.communicate()[0]
                     flake = flake.decode('utf8')
                     flake = str(flake)
@@ -231,7 +234,7 @@ def main(sheet_no, task_file, submissions_dir, rz_short, silent, nolog, override
 
         if not silent:
             print('')
-        createFile(missing, illegal, False, formatting=formatting,
+        createFile(points, missing, illegal, False, formatting=formatting,
                    silent=silent, override=override, log=log, add=add,
                    useFlake=useFlake, template=template)
         os.chdir('..')
@@ -243,6 +246,7 @@ def main(sheet_no, task_file, submissions_dir, rz_short, silent, nolog, override
     print(30*"=")
     print(str(countValue)+" Abgaben")
     print(str(missingFiles)+" Fehlende Dateien")
+
 
 if __name__ == "__main__":
     main()
