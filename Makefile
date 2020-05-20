@@ -32,7 +32,7 @@ checkout = $(info $(shell svn checkout --username $(SVN_USER) $(SVN_URL)$(1) $(2
 
 checkout-or-update = $(if $(shell [[ -d $(2) ]] && echo y),$(call update-folder,$(2)),$(call checkout,$(1),$(2)))
 
-clean_up_and_push = $(info $(shell cd $(SUBMISSIONS_DIR)/$(1) ; make -C $(EXERCISE_FOLDER_PREFIX)$(2) clean ; svn add $(EXERCISE_FOLDER_PREFIX)$(2)/$(FEEDBACK_FILE) ; svn commit -m "Feedback hinzugefügt"))
+clean_up_and_push = $(info $(shell cd $(SUBMISSIONS_DIR)/$(1) ; make -C $(EXERCISE_FOLDER_PREFIX)$(2) clean ; svn commit -m "Feedback hinzugefügt"))
 
 update-folder =  $(info $(shell svn update --username $(SVN_USER) $(1) && echo Updated $(1)))
 
@@ -57,7 +57,7 @@ checkout-or-update-all: load-tut-list $(SUBMISSIONS_DIR)
 aggr%: @$(CREDIT_DIR)/$(CREDITS_JSON_PREFIX)-$(EXERCISE_FOLDER_PREFIX)%.json ;
 
 feedback%: FORCE
-	$(UTILS_DIR)/$(FEEDBACK_SCRIPT) $* $(TASK_DIR)/tasks$*.json $(SUBMISSIONS_DIR) $(SVN_USER)
+	$(UTILS_DIR)/$(FEEDBACK_SCRIPT) $* $(TASK_DIR)/tasks$*.json $(SUBMISSIONS_DIR) $(SVN_USER) --add
 
 post_credits%: $(CREDIT_DIR)/$(CREDITS_JSON_PREFIX)-$(EXERCISE_FOLDER_PREFIX)%.json FORCE
 	$(UTILS_DIR)/$(POST_JSON_SCRIPT) $(BULK_URL) $(CREDIT_DIR)/$(CREDITS_JSON_PREFIX)-$(EXERCISE_FOLDER_PREFIX)$*.json $(SVN_USER) $(PW)
