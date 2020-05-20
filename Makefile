@@ -23,7 +23,7 @@ FEEDBACK_FILE := feedback-tutor.txt
 TASK_CONF_PREFIX := task
 COURSE_URL := https://daphne.informatik.uni-freiburg.de/ss2020/AlgoDat/
 SVN_URL = $(COURSE_URL)svn/
-BULK_URL = $(COURSE_URL)/solutions/bulk/
+BULK_URL = $(COURSE_URL)solutions/bulk/
 SVN_USER := XXX
 
 PW ?= $(shell stty -echo; read -p "Password: " pwd; stty echo; echo $$pwd)
@@ -60,7 +60,7 @@ feedback%: FORCE
 	$(UTILS_DIR)/$(FEEDBACK_SCRIPT) $* $(TASK_DIR)/tasks$*.json $(SUBMISSIONS_DIR) $(SVN_USER)
 
 post_credits%: $(CREDIT_DIR)/$(CREDITS_JSON_PREFIX)-%.json FORCE
-	$(POST_JSON_SCRIPT)/$(POST_JSON_SCRIPT) $(BULK_URL) $(CREDIT_DIR)/$(CREDITS_JSON_PREFIX)-$*.json $(SVN_USER) $(PW)
+	$(UTILS_DIR)/$(POST_JSON_SCRIPT) $(BULK_URL) $(CREDIT_DIR)/$(CREDITS_JSON_PREFIX)-$*.json $(SVN_USER) $(PW)
 
 push%: load-tut-list FORCE
 	@$(foreach tut, $(TUT_LIST), $(call clean_up_and_push,$(tut),$*))
