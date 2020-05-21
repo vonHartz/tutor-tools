@@ -12,15 +12,12 @@ import subprocess
 import re
 
 files = ['erfahrungen.txt']
-outputName = 'feedback-tutor' + '.txt'
 dontCheck = ['.svn', 'private', 'public', '_Feedback', 'internal',
              'sample_solutions']
-directoryName = 'uebungsblatt-'
 optionalFiles = ['Makefile']
 
 hr1 = '=============\n\n'
 hr2 = '-------------\n\n'
-signature = "\nBei Fragen zur Korrektur (Punktabzüge usw.) bin ich jederzeit per Mail erreichbar.\n\n Jan <hartzj@cs.uni-freiburg.de>"
 
 
 def load_tasks(task_file):
@@ -54,10 +51,10 @@ def load_tasks(task_file):
     return tasks
 
 
-def createFile(points, missing, illegal, empty, formatting='', template='',
-               silent=False, override=False, log=False, add=False,
-               useFlake=False):
-    fileName = getFileName(override=override)
+def createFile(feedback_file, points, missing, illegal, empty, signature,
+               formatting='', template='', silent=False, override=False,
+               log=False, add=False, useFlake=False):
+    fileName = getFileName(feedback_file, override=override)
     outFile = open(fileName, 'w')
 
     global countValue
@@ -102,11 +99,11 @@ def createFile(points, missing, illegal, empty, formatting='', template='',
         subprocess.call('svn add ' + fileName, shell=True)
 
 
-def getFileName(override=False):
+def getFileName(feedback_file, override=False):
     if override:
-        return outputName
+        return feedback_file
 
-    fileName = outputName
+    fileName = feedback_file
     new = 0
     commits = os.listdir()
     while fileName in commits:
@@ -118,7 +115,7 @@ def getFileName(override=False):
     return fileName
 
 
-def createTemplate(tasks, temp, points, recursiveCall, prefix):
+def createTemplate(tasks, temp, points, recursiveCall, prefix, signature):
     for key, value in tasks.items():
         temp += 'Aufgabe ' + prefix + key + '\n'
         temp += hr2 if recursiveCall else hr1
@@ -126,7 +123,8 @@ def createTemplate(tasks, temp, points, recursiveCall, prefix):
             temp += ">> XX / {} Punkte(n)".format(value) + '\n\n'
             points += value
         else:
-            temp, points = createTemplate(value, temp, points, True, key)
+            temp, points = createTemplate(value, temp, points, True, key,
+                                          signature)
     if not recursiveCall:
         temp += '\nDu hast XX von %.1f Punkten erreicht.\n' % points
         temp += signature
@@ -135,23 +133,27 @@ def createTemplate(tasks, temp, points, recursiveCall, prefix):
 
 
 @click.command()
+@click.argument('feedback_file', nargs=1, required=True)
+@click.argument('dir_name', nargs=1, required=True)
 @click.argument('sheet_no', nargs=1, required=True)
 @click.argument('task_file', nargs=1, required=True)
 @click.argument('submissions_dir', nargs=1, required=True)
 @click.argument('rz_short', nargs=1, required=True)
+@click.argument('signature', nargs=1, required=True)
 @click.option('-s', '--silent', is_flag=True)
 @click.option('-n', '--nolog', is_flag=True)
 @click.option('-o', '--override', is_flag=True)
 @click.option('-a', '--add', is_flag=True)
 @click.option('-f', '--noflake', is_flag=True)
-def main(sheet_no, task_file, submissions_dir, rz_short, silent, nolog,
-         override, add, noflake):
+def main(feedback_file, dir_name, sheet_no, task_file, submissions_dir,
+         rz_short, signature, silent, nolog, override, add, noflake):
     """
     Create the feedback sheet for each submission of a given sheet.
 
     Example use:
         utils/feedback.py 01 .conf/task01.json submissions/ abc123
     """
+    signature = signature.replace("\\n", "\n")
     log = not nolog
     useFlake = not noflake
 
@@ -166,7 +168,8 @@ def main(sheet_no, task_file, submissions_dir, rz_short, silent, nolog,
     tasks = load_tasks(task_file)
     os.chdir(submissions_dir)
     dirs = [d for d in os.listdir() if os.path.isdir(d) and d not in dontCheck]
-    template, points = createTemplate(tasks, template, points, False, '')
+    template, points = createTemplate(tasks, template, points, False, '',
+                                      signature)
     for dir in dirs:
         if not silent:
             print("\n")
@@ -175,22 +178,23 @@ def main(sheet_no, task_file, submissions_dir, rz_short, silent, nolog,
         os.chdir(dir)
         subprocess.call('svn update', shell=True)
         commits = os.listdir()
-        if 'uebungsblatt-' + sheet_no not in commits:
-            if not silent:
-                print('uebungsblatt-' + sheet_no, 'not committed.\n')
-            createFile(points, [], [], True, silent=silent, override=override,
-                       log=log, add=add, useFlake=useFlake, template=template)
-            os.chdir('..')
-            continue
 
-        os.chdir('uebungsblatt-' + sheet_no)
+        if dir_name + sheet_no not in commits:
+            if not silent:
+                print(dir_name + sheet_no, 'not committed.\n')
+            os.mkdir(dir_name + sheet_no)
+            if add:
+                subprocess.call('svn add ' + dir_name + sheet_no, shell=True)
+
+        os.chdir(dir_name + sheet_no)
         commits = os.listdir()
         if len(commits) == 0:
-            os.chdir('..')
             if not silent:
                 print('Nothing committed\n')
-            createFile(points, [], [], True, silent=silent, override=override,
-                       log=log, add=add, useFlake=useFlake, template=template)
+            createFile(feedback_file, points, [], [], True, signature,
+                       silent=silent, override=override, log=log, add=add,
+                       useFlake=useFlake, template=template)
+            os.chdir('..')
             os.chdir('..')
             continue
 
@@ -234,12 +238,10 @@ def main(sheet_no, task_file, submissions_dir, rz_short, silent, nolog,
 
         if not silent:
             print('')
-        createFile(points, missing, illegal, False, formatting=formatting,
-                   silent=silent, override=override, log=log, add=add,
-                   useFlake=useFlake, template=template)
+        createFile(feedback_file, points, missing, illegal, False, signature,
+                   formatting=formatting, silent=silent, override=override,
+                   log=log, add=add, useFlake=useFlake, template=template)
         os.chdir('..')
-        # os.chdir('..')
-        # createFile(missing, illegal, False, formatting)
         os.chdir('..')
     print("\n\n")
     print(30*"=")
